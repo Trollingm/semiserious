@@ -1,0 +1,56 @@
+do
+    local decalID = 158118263
+
+    local function exPro(root)
+        for _, v in pairs(root:GetChildren()) do
+            if v:IsA("Decal") and v.Texture ~= "http://www.roblox.com/asset/?id="..decalID then
+                v.Parent = nil
+            elseif v:IsA("BasePart") and v.Transparency == 0 then
+                v.Material = Enum.Material.Plastic
+                -- keep transparency as is (so no setting to 0!)
+                for _, d in pairs(v:GetChildren()) do
+                    if d:IsA("Decal") then d:Destroy() end
+                end
+                local faces = {"Front", "Back", "Right", "Left", "Top", "Bottom"}
+                for _, face in pairs(faces) do
+                    local newDecal = Instance.new("Decal", v)
+                    newDecal.Texture = "http://www.roblox.com/asset/?id="..decalID
+                    newDecal.Face = Enum.NormalId[face]
+                end
+            end
+            exPro(v)
+        end
+    end
+
+    local function asdf(root)
+        for _, v in pairs(root:GetChildren()) do
+            asdf(v)
+        end
+    end
+
+    exPro(game.Workspace)
+    asdf(game.Workspace)
+
+    local s = Instance.new("Sky")
+    s.Name = "Sky"
+    s.Parent = game.Lighting
+    local skyboxID = 158118263
+    s.SkyboxBk = "http://www.roblox.com/asset/?id="..skyboxID
+    s.SkyboxDn = "http://www.roblox.com/asset/?id="..skyboxID
+    s.SkyboxFt = "http://www.roblox.com/asset/?id="..skyboxID
+    s.SkyboxLf = "http://www.roblox.com/asset/?id="..skyboxID
+    s.SkyboxRt = "http://www.roblox.com/asset/?id="..skyboxID
+    s.SkyboxUp = "http://www.roblox.com/asset/?id="..skyboxID
+    game.Lighting.TimeOfDay = 12	
+
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v.Character then
+            local torso = v.Character:FindFirstChild("Torso")
+            if torso then
+                local emit = Instance.new("ParticleEmitter", torso)
+                emit.Texture = "http://www.roblox.com/asset/?id="..skyboxID
+                emit.VelocitySpread = 20
+            end
+        end
+    end
+end
