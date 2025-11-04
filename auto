@@ -9,11 +9,8 @@ workspace:SetAttribute("ServerType", "VIP")
 
 -- Server hopping function using queue_on_teleport
 local function hopToServer()
-    -- Queue this script to run in the next server
-    local code = [[
-        loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()
-    ]]
-    queue_on_teleport(code)
+    -- Queue the GitHub loadstring to run after teleport
+    queue_on_teleport('loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()')
 
     local function getServers(cursor)
         local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true"
@@ -61,9 +58,14 @@ local function hopToServer()
     end
 end
 
--- Function containing your generator automation and invisibility
+-- Main automation function
 local function runScript()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    if not character.Parent or character.Parent.Name ~= "Survivors" then
+        -- Wait until the character is under "Survivors"
+        repeat task.wait(0.5) character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() until character.Parent and character.Parent.Name == "Survivors"
+    end
+
     local humanoid = character:WaitForChild("Humanoid")
     local animator = humanoid:WaitForChild("Animator")
 
@@ -113,7 +115,6 @@ local function runScript()
         end
 
         if #unfinished == 0 then
-            -- Queue the script to run after teleport and hop
             hopToServer()
             break
         end
@@ -165,5 +166,5 @@ local function runScript()
     end
 end
 
--- Start the script
+-- Start the automation
 runScript()
