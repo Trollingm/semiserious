@@ -69,21 +69,29 @@ local function runScript()
     local humanoid = character:WaitForChild("Humanoid")
     local animator = humanoid:WaitForChild("Animator")
 
-    -- Permanent invisibility
+    -- Permanent invisibility enforcement
     local invisAnim = Instance.new("Animation")
     invisAnim.AnimationId = "rbxassetid://75804462760596"
-    local invisTrack = animator:LoadAnimation(invisAnim)
-    invisTrack.Priority = Enum.AnimationPriority.Action4
-    invisTrack:Play(0)
-    invisTrack:AdjustSpeed(0)
 
-    task.spawn(function()
-        while invisTrack do
-            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                if track ~= invisTrack then track:Stop(0) end
+    local invisTrack
+    local function ensureInvisible()
+        if not invisTrack or not invisTrack.IsPlaying then
+            if invisTrack then
+                invisTrack:Stop(0)
+                invisTrack:Destroy()
             end
+            invisTrack = animator:LoadAnimation(invisAnim)
             invisTrack.Priority = Enum.AnimationPriority.Action4
-            task.wait()
+            invisTrack:Play(0)
+            invisTrack:AdjustSpeed(0)
+        end
+    end
+
+    -- Continuously enforce invisibility every 0.5 seconds
+    task.spawn(function()
+        while true do
+            ensureInvisible()
+            task.wait(0.5)
         end
     end)
 
