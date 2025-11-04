@@ -2,15 +2,49 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local PlaceId = game.PlaceId
 local JobId = game.JobId
+
+-- GUI setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoFarmGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 0, 40)
+frame.Position = UDim2.new(0, 0, 0, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundTransparency = 0.3
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, 0, 1, 0)
+textLabel.BackgroundTransparency = 1
+textLabel.Text = "autofarm loaded, by dhrht"
+textLabel.Font = Enum.Font.SourceSansBold
+textLabel.TextSize = 22
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.TextStrokeTransparency = 0.7
+textLabel.Parent = frame
+
+-- Fade out GUI after 5 seconds
+task.spawn(function()
+	task.wait(5)
+	for i = 0, 1, 0.05 do
+		frame.BackgroundTransparency = 0.3 + i * 0.7
+		textLabel.TextTransparency = i
+		task.wait(0.05)
+	end
+	screenGui:Destroy()
+end)
 
 queue_on_teleport('loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()')
 workspace:SetAttribute("ServerType", "VIP")
 
--- Server hopping function using queue_on_teleport
 local function hopToServer()
-
     local function getServers(cursor)
         local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true"
         if cursor then url = url .. "&cursor=" .. cursor end
@@ -57,9 +91,7 @@ local function hopToServer()
     end
 end
 
--- Main automation function
 local function runScript()
-    -- Wait for the player to fully load
     local character
     repeat
         character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -69,7 +101,6 @@ local function runScript()
     local humanoid = character:WaitForChild("Humanoid")
     local animator = humanoid:WaitForChild("Animator")
 
-    -- Permanent invisibility enforcement
     local invisAnim = Instance.new("Animation")
     invisAnim.AnimationId = "rbxassetid://75804462760596"
 
@@ -87,7 +118,6 @@ local function runScript()
         end
     end
 
-    -- Continuously enforce invisibility every 0.5 seconds
     task.spawn(function()
         while true do
             ensureInvisible()
@@ -111,7 +141,6 @@ local function runScript()
         return false
     end
 
-    -- Wait until at least one unfinished generator exists
     local unfinishedGenerators = {}
     repeat
         unfinishedGenerators = {}
@@ -126,7 +155,6 @@ local function runScript()
         task.wait(0.5)
     until #unfinishedGenerators > 0
 
-    -- Main generator automation loop
     while true do
         local unfinished = {}
         for _, obj in ipairs(map:GetChildren()) do
@@ -190,5 +218,4 @@ local function runScript()
     end
 end
 
--- Start the automation
 runScript()
