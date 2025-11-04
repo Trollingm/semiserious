@@ -7,6 +7,7 @@ local JobId = game.JobId
 
 workspace:SetAttribute("ServerType", "VIP")
 
+-- Server hopping function using queue_on_teleport
 local function hopToServer()
     queue_on_teleport('loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()')
 
@@ -56,11 +57,21 @@ local function hopToServer()
     end
 end
 
+-- Main automation function
 local function runScript()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    if not character.Parent or character.Parent.Name ~= "Survivors" then
+        -- Wait until the character is under "Survivors"
+        repeat task.wait(0.5) character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() until character.Parent and character.Parent.Name == "Survivors"
+    end
+
+    -- Added 6 second delay before running automation
+    task.wait(6)
+
     local humanoid = character:WaitForChild("Humanoid")
     local animator = humanoid:WaitForChild("Animator")
 
+    -- Permanent invisibility
     local invisAnim = Instance.new("Animation")
     invisAnim.AnimationId = "rbxassetid://75804462760596"
     local invisTrack = animator:LoadAnimation(invisAnim)
@@ -157,32 +168,5 @@ local function runScript()
     end
 end
 
-local started = false
-
-task.spawn(function()
-    while not started do
-        local char = LocalPlayer.Character
-        if char and char.Parent and char.Parent.Name == "Survivors" then
-            task.wait(6)
-            if LocalPlayer.Character and LocalPlayer.Character.Parent and LocalPlayer.Character.Parent.Name == "Survivors" then
-                started = true
-                runScript()
-                break
-            end
-        end
-        task.wait(0.5)
-    end
-end)
-
-LocalPlayer.CharacterAdded:Connect(function(char)
-    if not started then
-        task.wait(0.5)
-        if char and char.Parent and char.Parent.Name == "Survivors" then
-            task.wait(6)
-            if LocalPlayer.Character and LocalPlayer.Character.Parent and LocalPlayer.Character.Parent.Name == "Survivors" then
-                started = true
-                runScript()
-            end
-        end
-    end
-end)
+-- Start the automation
+runScript()
