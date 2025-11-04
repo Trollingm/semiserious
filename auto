@@ -11,7 +11,7 @@ workspace:SetAttribute("ServerType", "VIP")
 local function hopToServer()
     -- Queue this script to run in the next server
     local code = [[
-        loadstring(game:HttpGet("REPLACE_WITH_YOUR_SCRIPT_URL_OR_INLINE_CODE"))()
+        loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()
     ]]
     queue_on_teleport(code)
 
