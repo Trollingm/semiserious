@@ -59,14 +59,12 @@ end
 
 -- Main automation function
 local function runScript()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    if not character.Parent or character.Parent.Name ~= "Survivors" then
-        -- Wait until the character is under "Survivors"
-        repeat task.wait(0.5) character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() until character.Parent and character.Parent.Name == "Survivors"
-    end
-
-    -- Added 6 second delay before running automation
-    task.wait(6)
+    -- Wait for the player to fully load
+    local character
+    repeat
+        character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        task.wait(0.5)
+    until character and character.Parent and character.Parent.Name == "Survivors" and character:FindFirstChild("Humanoid") and character.PrimaryPart
 
     local humanoid = character:WaitForChild("Humanoid")
     local animator = humanoid:WaitForChild("Animator")
@@ -105,6 +103,22 @@ local function runScript()
         return false
     end
 
+    -- Wait until at least one unfinished generator exists
+    local unfinishedGenerators = {}
+    repeat
+        unfinishedGenerators = {}
+        for _, obj in ipairs(map:GetChildren()) do
+            if obj.Name == "Generator" then
+                local progress = obj:FindFirstChild("Progress")
+                if progress and progress.Value < 100 then
+                    table.insert(unfinishedGenerators, obj)
+                end
+            end
+        end
+        task.wait(0.5)
+    until #unfinishedGenerators > 0
+
+    -- Main generator automation loop
     while true do
         local unfinished = {}
         for _, obj in ipairs(map:GetChildren()) do
