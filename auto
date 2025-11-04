@@ -5,11 +5,11 @@ local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
 local JobId = game.JobId
 
+queue_on_teleport('loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()')
 workspace:SetAttribute("ServerType", "VIP")
 
 -- Server hopping function using queue_on_teleport
 local function hopToServer()
-    queue_on_teleport('loadstring(game:HttpGet("https://github.com/Trollingm/semiserious/raw/refs/heads/main/auto"))()')
 
     local function getServers(cursor)
         local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true"
