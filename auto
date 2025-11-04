@@ -1,0 +1,169 @@
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+
+workspace:SetAttribute("ServerType", "VIP")
+
+-- Server hopping function using queue_on_teleport
+local function hopToServer()
+    -- Queue this script to run in the next server
+    local code = [[
+        loadstring(game:HttpGet("REPLACE_WITH_YOUR_SCRIPT_URL_OR_INLINE_CODE"))()
+    ]]
+    queue_on_teleport(code)
+
+    local function getServers(cursor)
+        local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true"
+        if cursor then url = url .. "&cursor=" .. cursor end
+        local success, res = pcall(function() return game:HttpGet(url) end)
+        if success then return HttpService:JSONDecode(res) end
+        return nil
+    end
+
+    local function findServersBelowSixPlayers()
+        local servers, randomServers, cursor = {}, {}, nil
+        repeat
+            local body = getServers(cursor)
+            if body and body.data then
+                for _, v in pairs(body.data) do
+                    local playing = tonumber(v.playing)
+                    local maxPlayers = tonumber(v.maxPlayers)
+                    if playing and maxPlayers and v.id ~= JobId then
+                        if playing < 6 then table.insert(servers, v.id) end
+                        if playing < maxPlayers then table.insert(randomServers, v.id) end
+                    end
+                end
+            end
+            cursor = body and body.nextPageCursor
+        until not cursor
+        return servers, randomServers
+    end
+
+    local attempt = 0
+    while true do
+        attempt = attempt + 1
+        local servers, randomServers = findServersBelowSixPlayers()
+        if #servers > 0 then
+            local chosenServer
+            if attempt % 5 == 0 and #randomServers > 0 then
+                chosenServer = randomServers[math.random(1, #randomServers)]
+            else
+                chosenServer = servers[math.random(1, #servers)]
+            end
+            TeleportService:TeleportToPlaceInstance(PlaceId, chosenServer, LocalPlayer)
+            break
+        else
+            task.wait(2)
+        end
+    end
+end
+
+-- Function containing your generator automation and invisibility
+local function runScript()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local animator = humanoid:WaitForChild("Animator")
+
+    -- Permanent invisibility
+    local invisAnim = Instance.new("Animation")
+    invisAnim.AnimationId = "rbxassetid://75804462760596"
+    local invisTrack = animator:LoadAnimation(invisAnim)
+    invisTrack.Priority = Enum.AnimationPriority.Action4
+    invisTrack:Play(0)
+    invisTrack:AdjustSpeed(0)
+
+    task.spawn(function()
+        while invisTrack do
+            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                if track ~= invisTrack then track:Stop(0) end
+            end
+            invisTrack.Priority = Enum.AnimationPriority.Action4
+            task.wait()
+        end
+    end)
+
+    local map = workspace:WaitForChild("Map"):WaitForChild("Ingame"):WaitForChild("Map")
+    local totalREs = 4
+
+    local function isPositionOccupied(pos)
+        for _, folder in ipairs(workspace.Players:GetChildren()) do
+            for _, model in ipairs(folder:GetChildren()) do
+                if model:IsA("Model") and model.PrimaryPart then
+                    if (model.PrimaryPart.Position - pos).Magnitude < 2 then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+
+    while true do
+        local unfinished = {}
+        for _, obj in ipairs(map:GetChildren()) do
+            if obj.Name == "Generator" then
+                local progress = obj:FindFirstChild("Progress")
+                if progress and progress.Value < 100 then
+                    table.insert(unfinished, obj)
+                end
+            end
+        end
+
+        if #unfinished == 0 then
+            -- Queue the script to run after teleport and hop
+            hopToServer()
+            break
+        end
+
+        for callIndex = 1, totalREs do
+            local didSomething = false
+            for _, gen in ipairs(unfinished) do
+                local progress = gen:FindFirstChild("Progress")
+                if progress and progress.Value < 100 then
+                    local center = gen:WaitForChild("Positions"):WaitForChild("Center").Position
+                    local left = gen:WaitForChild("Positions"):WaitForChild("Left").Position
+                    local right = gen:WaitForChild("Positions"):WaitForChild("Right").Position
+
+                    local targetPos = center
+                    if isPositionOccupied(center) then
+                        if not isPositionOccupied(left) then
+                            targetPos = left
+                        elseif not isPositionOccupied(right) then
+                            targetPos = right
+                        else
+                            continue
+                        end
+                    end
+
+                    character:MoveTo(targetPos)
+                    task.wait(0.2)
+
+                    local remotes = gen:WaitForChild("Remotes")
+                    remotes:WaitForChild("RF"):InvokeServer("enter")
+                    remotes:WaitForChild("RE"):FireServer()
+                    task.wait(0.4)
+                    didSomething = true
+                end
+            end
+
+            if not didSomething then
+                hopToServer()
+                break
+            end
+        end
+
+        for _, gen in ipairs(unfinished) do
+            local progress = gen:FindFirstChild("Progress")
+            if progress and progress.Value < 100 then
+                local remotes = gen:WaitForChild("Remotes")
+                remotes:WaitForChild("RF"):InvokeServer("leave")
+            end
+        end
+    end
+end
+
+-- Start the script
+runScript()
